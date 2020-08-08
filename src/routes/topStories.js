@@ -2,26 +2,14 @@ const express = require('express');
 const fetch = require('node-fetch');
 const redis = require('redis');
 
+const cache = require('../middlewares/cache');
+
 const router = express.Router();
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
 const client = redis.createClient(REDIS_PORT);
+const CACHE_KEY = "topStories";
 
-
-//cached middleware
-function cache(req, res, next) {
-    client.get('topStories', (err, data) => {
-        if(err) throw err;
-
-        if(data != null) {
-            res.send(data);
-        }
-        else {
-            next();
-        }
-    })
-}
-
-router.get('/top-stories', cache, async (req, res) => {
+router.get('/top-stories', cache(CACHE_KEY), async (req, res) => {
     try {
         console.log('fetching data..');
 
@@ -40,7 +28,7 @@ router.get('/top-stories', cache, async (req, res) => {
         }) )
 
         //set data to redis
-        client.setex('topStories', 600, JSON.stringify(response));
+        client.setex(CACHE_KEY, 600, JSON.stringify(response));
 
         res.send(response)
 
