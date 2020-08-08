@@ -1,16 +1,48 @@
 const express = require('express');
 const fetch = require('node-fetch');
+const redis = require('redis');
 
 const router = express.Router();
+const REDIS_PORT = process.env.REDIS_PORT || 6379;
+const client = redis.createClient(REDIS_PORT);
 
-router.get('/top-stories', async (req, res) => {
+
+//cached middleware
+function cache(req, res, next) {
+    client.get('topStories', (err, data) => {
+        if(err) throw err;
+
+        if(data != null) {
+            res.send(data);
+        }
+        else {
+            next();
+        }
+    })
+}
+
+router.get('/top-stories', cache, async (req, res) => {
     try {
         console.log('fetching data..');
 
-        const response = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
-        const data = await response.json();
+        const topStoriesResponse = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
+        const data = await topStoriesResponse.json();
+        let response = [];
 
-        res.send(data)
+        //Taking only top 10 stories
+        data.splice(9, data.length - 10);
+
+        //get data for all top stories
+        response = await  Promise.all( data.map(async (id) => {
+            const storyResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`);
+            
+            return storyResponse.json();
+        }) )
+
+        //set data to redis
+        client.setex('topStories', 600, JSON.stringify(response));
+
+        res.send(response)
 
     } catch (err) {
         console.error(err);
