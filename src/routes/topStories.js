@@ -8,6 +8,7 @@ const router = express.Router();
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
 const client = redis.createClient(REDIS_PORT);
 const CACHE_KEY = "topStories";
+const PAST_STORIES = "pastStories";
 
 router.get('/top-stories', cache(CACHE_KEY), async (req, res) => {
     try {
@@ -29,6 +30,16 @@ router.get('/top-stories', cache(CACHE_KEY), async (req, res) => {
 
         //set data to redis
         client.setex(CACHE_KEY, 600, JSON.stringify(response));
+
+        //Adding the fetched stories to past stories key
+        const multi = client.multi()
+        response.map(obj => {
+            multi.rpush(PAST_STORIES, JSON.stringify(obj))
+        });
+
+        multi.exec(function(err, response) {
+            if(err) throw err; 
+        })
 
         res.send(response)
 
