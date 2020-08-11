@@ -5,13 +5,16 @@ const client = redis.createClient(REDIS_PORT);
 
 module.exports = (key) => {
   return (req, res, next) => {
-    client.get(key, (err, data) => {
+    const {id} = req.params;
+    const KEY = key ? key : id.toString();
+
+    client.get(KEY, (err, data) => {
       if (err) throw err;
 
       if (data != null) {
         res.send(data);
       } else {
-        next();
+        next(err);
       }
     });
   };

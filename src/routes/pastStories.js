@@ -7,7 +7,7 @@ const REDIS_PORT = process.env.REDIS_PORT || 6379;
 const client = redis.createClient(REDIS_PORT);
 const PAST_STORIES = "pastStories";
 
-router.get("/past-stories", async (req, res) => {
+router.get("/past-stories", async (req, res, next) => {
   try {
     console.log("fetching past stories");
 
@@ -23,6 +23,7 @@ router.get("/past-stories", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500);
+    next(err);
   }
 });
 
