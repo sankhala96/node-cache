@@ -30,15 +30,15 @@ router.get('/top-stories', cache(CACHE_KEY), async (req, res, next) => {
         })
 
         //Taking only top 10 stories
-        const response = results.slice(results.length-10);
+        const response = results.slice(results.length-10).reverse();
 
         //set data to redis
-        client.setex(CACHE_KEY, 6, JSON.stringify(response));
+        client.setex(CACHE_KEY, 600, JSON.stringify(response));
 
         //Adding the fetched stories to past stories key
         const multi = client.multi()
         response.map(obj => {
-            multi.rpush(PAST_STORIES, JSON.stringify(obj))
+            multi.sadd(PAST_STORIES, JSON.stringify(obj))
         });
 
         multi.exec(function(err, response) {

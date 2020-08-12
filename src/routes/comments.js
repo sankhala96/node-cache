@@ -24,9 +24,6 @@ router.get("/comments/:id", cache(), async (req, res, next) => {
 			0: [],
 		};
 
-		//extracting top 10 commnets sorted by total no of commnets (including child)
-		comments.splice(9, comments.length - 10);
-
 		await Promise.all(
 			comments.map(async (id) => {
 
@@ -52,6 +49,9 @@ router.get("/comments/:id", cache(), async (req, res, next) => {
 		Object.keys(sortObj).reverse().map((key) => {
 			response = response.concat(sortObj[key]);
 		});
+
+		//extracting top 10 commnets sorted by total no of commnets (including child)
+		response.splice(9, response.length - 10);
 
 		//set data to redis
 		client.setex(id, 600, JSON.stringify(response));

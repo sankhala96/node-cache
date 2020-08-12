@@ -11,7 +11,7 @@ router.get("/past-stories", async (req, res, next) => {
   try {
     console.log("fetching past stories");
 
-    client.lrange(PAST_STORIES, 0, -1, function (error, items) {
+    client.smembers(PAST_STORIES, function (error, items) {
       if (error) throw error;
 
       const response = items.map(item => {
@@ -21,7 +21,6 @@ router.get("/past-stories", async (req, res, next) => {
     });
 
   } catch (err) {
-    console.error(err);
     res.status(500);
     next(err);
   }
